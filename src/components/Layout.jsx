@@ -1,4 +1,4 @@
-import React from 'react';
+import { NavLink } from 'react-router-dom';
 
 const Layout = ({ children }) => {
     return (
@@ -8,15 +8,42 @@ const Layout = ({ children }) => {
                     <h2 style={{ fontSize: '1.25rem', color: 'var(--accent-color)' }}>Smart Helmet</h2>
                 </div>
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <button className="btn" style={{ justifyContent: 'flex-start', textAlign: 'left', backgroundColor: 'var(--bg-card)' }}>
+                    <NavLink
+                        to="/"
+                        className={({ isActive }) => `btn ${isActive ? 'btn-active' : ''}`}
+                        style={({ isActive }) => ({
+                            justifyContent: 'flex-start',
+                            textAlign: 'left',
+                            backgroundColor: isActive ? 'var(--bg-card)' : 'transparent',
+                            color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
+                        })}
+                    >
                         Dashboard
-                    </button>
-                    <button className="btn" style={{ justifyContent: 'flex-start', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                    </NavLink>
+                    <NavLink
+                        to="/history"
+                        className={({ isActive }) => `btn ${isActive ? 'btn-active' : ''}`}
+                        style={({ isActive }) => ({
+                            justifyContent: 'flex-start',
+                            textAlign: 'left',
+                            backgroundColor: isActive ? 'var(--bg-card)' : 'transparent',
+                            color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
+                        })}
+                    >
                         History
-                    </button>
-                    <button className="btn" style={{ justifyContent: 'flex-start', textAlign: 'left', color: 'var(--text-secondary)' }}>
+                    </NavLink>
+                    <NavLink
+                        to="/settings"
+                        className={({ isActive }) => `btn ${isActive ? 'btn-active' : ''}`}
+                        style={({ isActive }) => ({
+                            justifyContent: 'flex-start',
+                            textAlign: 'left',
+                            backgroundColor: isActive ? 'var(--bg-card)' : 'transparent',
+                            color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)'
+                        })}
+                    >
                         Settings
-                    </button>
+                    </NavLink>
                 </nav>
                 <div style={{ marginTop: 'auto' }}>
                     <div className="card" style={{ padding: '1rem' }}>

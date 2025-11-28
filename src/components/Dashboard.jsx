@@ -1,105 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import SensorMonitor from './SensorMonitor';
 import AlertSystem from './AlertSystem';
 import MapLocation from './MapLocation';
-import ContactsManager from './ContactsManager';
-import { helmetService } from '../services/mockHelmetService';
-import { sendSOS } from '../services/smsService';
+import { useHelmet } from '../context/HelmetContext';
 
 const Dashboard = () => {
-    const [data, setData] = useState(helmetService.data);
-    const [status, setStatus] = useState(helmetService.status);
-    const [contacts, setContacts] = useState([
-        { id: 1, name: 'Mom', phone: '9876543210' },
-        { id: 2, name: 'Emergency', phone: '108' }
-    ]);
-    const [smsLogs, setSmsLogs] = useState([]);
-    const [autoOpenWhatsApp, setAutoOpenWhatsApp] = useState(true);
+    const {
+        data,
+        status,
+        contacts,
+        smsLogs,
+        autoOpenWhatsApp,
+        setAutoOpenWhatsApp,
+        handleSimulateCrash,
+        handleReset
+    } = useHelmet();
 
-    useEffect(() => {
-        helmetService.startSimulation();
-        // Force enable real location tracking on mount
-        helmetService.toggleRealLocation(true);
-
-        const unsubscribe = helmetService.subscribe((newData) => {
-            setData({ ...newData });
-            setStatus(newData.status);
-        });
-
-        return () => {
-            helmetService.stopSimulation();
-            unsubscribe();
-        };
-    }, []);
-
-    // Effect to trigger SOS when status becomes CRITICAL
-    useEffect(() => {
-        let intervalId;
-        if (status === 'CRITICAL') {
-            // Auto-open WhatsApp logic
-            if (autoOpenWhatsApp) {
-                contacts.forEach((contact, index) => {
-                    const googleMapsLink = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
-                    const messageBody = `SOS! Accident detected! Help needed at: ${googleMapsLink}`;
-                    const waLink = `https://wa.me/${contact.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(messageBody)}`;
-
-                    // Stagger opens to try and avoid some popup blockers, though likely still blocked
-                    setTimeout(() => {
-                        window.open(waLink, '_blank');
-                    }, index * 1000 + 500);
-                });
-            }
-
-            // Initial delay before starting the "bombing"
-            const startDelay = setTimeout(() => {
-                // Function to send batch of SMS and WhatsApp
-                const sendBatch = () => {
-                    if (contacts.length === 0) return;
-
-                    contacts.forEach(contact => {
-                        // Simulate SMS
-                        sendSOS(contact, { latitude: data.latitude, longitude: data.longitude })
-                            .then(result => {
-                                setSmsLogs(prev => [{ type: 'SMS', name: contact.name, timestamp: result.timestamp }, ...prev]);
-                            });
-
-                        // Simulate WhatsApp (immediate success for simulation)
-                        setTimeout(() => {
-                            setSmsLogs(prev => [{ type: 'WhatsApp', name: contact.name, timestamp: new Date() }, ...prev]);
-                        }, 500); // Slight delay after SMS
-                    });
-                };
-
-                // Send first batch immediately after delay
-                sendBatch();
-
-                // Repeat every 5 seconds (Continuous Alert / "Bombing")
-                intervalId = setInterval(sendBatch, 5000);
-            }, 3000); // Wait 3 seconds before starting
-
-            return () => {
-                clearTimeout(startDelay);
-                if (intervalId) clearInterval(intervalId);
-            };
-        }
-    }, [status, contacts, data.latitude, data.longitude, autoOpenWhatsApp]);
-
-    const handleSimulateCrash = () => {
-        helmetService.triggerCrash();
-    };
-
-    const handleReset = () => {
-        helmetService.resetStatus();
-        setSmsLogs([]);
-    };
-
-    const handleAddContact = (contact) => {
-        setContacts([...contacts, contact]);
-    };
-
-    const handleRemoveContact = (id) => {
-        setContacts(contacts.filter(c => c.id !== id));
-    };
+    const navigate = useNavigate();
 
     return (
         <div>
@@ -122,7 +40,7 @@ const Dashboard = () => {
                             *Must allow popups. You need to click 'Send' in WhatsApp.
                         </span>
                     </div>
-                    <button className="btn" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }} onClick={() => console.log('Settings clicked')}>
+                    <button className="btn" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }} onClick={() => navigate('/settings')}>
                         Settings
                     </button>
                     <button className="btn btn-danger" onClick={handleSimulateCrash}>
@@ -145,7 +63,19 @@ const Dashboard = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <MapLocation latitude={data.latitude} longitude={data.longitude} />
-                    <ContactsManager contacts={contacts} onAddContact={handleAddContact} onRemoveContact={handleRemoveContact} />
+                    <div className="card">
+                        <h3>Quick Contacts</h3>
+                        <p className="text-sm" style={{ marginBottom: '1rem' }}>Manage in Settings</p>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {contacts.slice(0, 3).map(contact => (
+                                <div key={contact.id} style={{ padding: '0.5rem', backgroundColor: 'var(--bg-primary)', borderRadius: 'var(--radius)' }}>
+                                    <div style={{ fontWeight: '500' }}>{contact.name}</div>
+                                    <div className="text-sm">{contact.phone}</div>
+                                </div>
+                            ))}
+                            {contacts.length > 3 && <div className="text-sm text-secondary">+{contacts.length - 3} more</div>}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
